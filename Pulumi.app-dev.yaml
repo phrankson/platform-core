@@ -1,0 +1,5 @@
+config:
+  app:cluster-info:
+    name: app-dev
+    kind-image: kindest/node:v1.31.0
+    wait-seconds: 60
