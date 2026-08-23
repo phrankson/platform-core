@@ -43,3 +43,4 @@ create, kubeconfig, k8s = cluster.create_kind_cluster(
 
 pulumi.export("cluster_name", cls_cfg.name)
 pulumi.export("docker_network", net_cfg.dockerNetwork)
+pulumi.export("kubeconfig", kubeconfig.stdout)
