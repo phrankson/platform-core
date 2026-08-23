@@ -3,3 +3,8 @@ config:
     name: pe-sandbox
     kind-image: kindest/node:v1.31.0
     wait-seconds: 60
+  app:network:
+    dockerNetwork: platform-sandbox-net
+    vpcCidr: 10.0.0.0/16
+    podCidr: 10.244.0.0/16
+    serviceCidr: 10.96.0.0/12
