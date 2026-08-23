@@ -1,0 +1,3 @@
+name: platform-core
+description: Core platform runtime -- Kubernetes cluster, networking, and observability.
+runtime: python
