@@ -9,7 +9,7 @@
 #
 # Prerequisites (not yet set up -- this file alone won't run without these):
 #   - A CircleCI self-hosted runner registered under the resource class
-#     `peh_runner/local_laptop_runner` (Organization Settings -> Self-Hosted
+#     `erikan/local_laptop_runner` (Organization Settings -> Self-Hosted
 #     Runners). Without this, jobs will sit queued forever waiting for a
 #     runner that doesn't exist.
 #   - The `PLATFORM_ADMIN` context (already created for
@@ -51,7 +51,7 @@ on-tag-main: &on-tag-main
 executors:
   local-machine:
     machine: true
-    resource_class: peh_runner/local_laptop_runner
+    resource_class: erikan/local_laptop_runner
     working_directory: ~/project
 
 # ── Reusable commands ─────────────────────────────────────────────────────────
