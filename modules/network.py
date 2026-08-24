@@ -7,7 +7,7 @@ config file telling Kind what internal addressing to use.
 
 import base64
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import yaml
 
@@ -39,7 +39,9 @@ class NetworkConfig:
     # sees or routes to them, so they're safe to reuse across environments.
     podCidr: str
     serviceCidr: str
-    extraPortMappings: Optional[List[PortMap]] = None  # optional host<->container port rules
+    extraPortMappings: list[PortMap] | None = (
+        None  # optional host<->container port rules
+    )
 
 
 def ensure_docker_network(cfg: NetworkConfig) -> local.Command:
@@ -68,13 +70,13 @@ def render_kind_config(cluster_name: str, net: NetworkConfig) -> str:
     one control-plane node, one worker node, and which address ranges to
     use for pod/service traffic.
     """
-    node: Dict[str, Any] = {"role": "control-plane"}
+    node: dict[str, Any] = {"role": "control-plane"}
     if net.extraPortMappings:
         # vars(pm) turns each PortMap dataclass into a plain dict, which is
         # what the YAML output needs.
         node["extraPortMappings"] = [vars(pm) for pm in net.extraPortMappings]
 
-    kind_cfg: Dict[str, Any] = {
+    kind_cfg: dict[str, Any] = {
         "kind": "Cluster",
         "apiVersion": "kind.x-k8s.io/v1alpha4",
         "networking": {

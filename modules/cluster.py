@@ -5,7 +5,6 @@ using "Kind" (Kubernetes in Docker) and connecting Pulumi to it.
 """
 
 from dataclasses import dataclass
-from typing import List, Optional, Tuple
 
 # ResourceOptions lets us control how a Pulumi resource behaves -- here we
 # use it to say "don't create the cluster until the network is ready."
@@ -28,7 +27,7 @@ class ClusterConfig:
     """Settings for one Kind cluster, read from the per-environment config file."""
 
     name: str  # the cluster's name, e.g. "pe-sandbox" or "app-dev"
-    kind_image: Optional[str] = None  # which Kubernetes node image/version to use
+    kind_image: str | None = None  # which Kubernetes node image/version to use
     wait_seconds: int = 60  # how long to wait for the cluster to become ready
 
 
@@ -37,8 +36,8 @@ def create_kind_cluster(
     cfg_file_path: str,
     docker_network: str,
     depends_on=None,
-    replace_triggers: Optional[List[str]] = None,
-) -> Tuple[local.Command, local.Command, Provider]:
+    replace_triggers: list[str] | None = None,
+) -> tuple[local.Command, local.Command, Provider]:
     """Create a Kind cluster on the given Docker network and point kubectl at it.
 
     Returns three things the caller (__main__.py) will need:
