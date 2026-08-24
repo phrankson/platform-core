@@ -7,11 +7,12 @@
 #   - On every commit to main -> preview + deploy to platform-sandbox -> validate
 #   - On Git tag              -> re-validate sandbox, then (after approval) deploy to app-dev
 #
-# Prerequisites (not yet set up -- this file alone won't run without these):
+# Prerequisites (all set up as of 2026-08-24):
 #   - A CircleCI self-hosted runner registered under the resource class
 #     `erikan/local_laptop_runner` (Organization Settings -> Self-Hosted
-#     Runners). Without this, jobs will sit queued forever waiting for a
-#     runner that doesn't exist.
+#     Runners), installed via the `circleci-runner` systemd service and
+#     confirmed online -- without this, jobs would sit queued forever
+#     waiting for a runner that doesn't exist.
 #   - The `PLATFORM_ADMIN` context (already created for
 #     platform-team-administration) holding PULUMI_ACCESS_TOKEN -- reused
 #     here rather than creating a second context for the same credential.
