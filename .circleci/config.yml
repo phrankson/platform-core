@@ -81,7 +81,9 @@ commands:
           name: Type check with mypy
           command: |
             source .venv/bin/activate
-            mypy __main__.py modules/ --ignore-missing-imports
+            # --follow-imports=skip: without it, mypy chases into
+            # pulumi_kubernetes's enormous generated SDK and hangs.
+            mypy __main__.py modules/ --ignore-missing-imports --follow-imports=skip
       - run:
           name: Check import sorting with isort
           command: |
