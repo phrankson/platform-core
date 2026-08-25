@@ -261,3 +261,27 @@ workflows:
           requires:
             - Deploy to app-dev
           filters: *on-tag-main
+
+      # Second approval gate: only after app-dev has been deployed AND
+      # validated does a human get asked to approve promoting to app-prod.
+      - approve-prod-deploy:
+          name: "Approve prod deploy"
+          type: approval
+          requires:
+            - Validate app-dev
+          filters: *on-tag-main
+
+      - pulumi-update:
+          name: "Deploy to app-prod"
+          context: *context
+          pulumi_stack: app-prod
+          requires:
+            - Approve prod deploy
+          filters: *on-tag-main
+      - validate-infrastructure:
+          name: "Validate app-prod"
+          context: *context
+          pulumi_stack: app-prod
+          requires:
+            - Deploy to app-prod
+          filters: *on-tag-main

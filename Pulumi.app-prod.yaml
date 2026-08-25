@@ -1,0 +1,10 @@
+config:
+  app:cluster-info:
+    name: app-prod
+    kind-image: kindest/node:v1.31.0
+    wait-seconds: 60
+  app:network:
+    dockerNetwork: app-prod-net
+    vpcCidr: 10.2.0.0/16
+    podCidr: 10.244.0.0/16
+    serviceCidr: 10.96.0.0/12
