@@ -51,6 +51,17 @@ create, kubeconfig, k8s = cluster.create_kind_cluster(
 # depends_on needed, Pulumi follows that dependency through the Output.
 argocd_release = argocd.install(k8s, version=argocd_cfg.version)
 
+# Bootstrap: point Argo CD at platform-gitops' folder for *this* stack.
+# pulumi.get_stack() -- not cls_cfg.name -- because the platform-gitops
+# environments/ folders are named after the Pulumi stack (platform-sandbox,
+# app-dev, app-prod), not the Kind cluster name (pe-sandbox, ...).
+argocd_root_app = argocd.seed_gitops(
+    k8s,
+    repo_url="https://github.com/phrankson/platform-gitops.git",
+    path=f"environments/{pulumi.get_stack()}",
+    depends_on=[argocd_release],
+)
+
 pulumi.export("cluster_name", cls_cfg.name)
 pulumi.export("docker_network", net_cfg.dockerNetwork)
 pulumi.export("kubeconfig", kubeconfig.stdout)
