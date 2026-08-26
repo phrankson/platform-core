@@ -8,3 +8,5 @@ config:
     vpcCidr: 10.1.0.0/16
     podCidr: 10.244.0.0/16
     serviceCidr: 10.96.0.0/12
+  app:argocd:
+    version: 8.0.9
