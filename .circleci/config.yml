@@ -19,9 +19,11 @@
 #   - pulumi, docker, kind, kubectl, bats CLIs installed on that runner
 #     (uv is bootstrapped by the setup-python command below).
 #
-# Deferred (commented out below, not yet built in this repo):
-#   - OPA/conftest policy checks (no policy/ or environments/ directories yet)
-#   - Flux GitOps reconciliation + smoke test (Flux hasn't been introduced yet)
+# OPA/conftest policy checks and GitOps reconciliation + smoke testing
+# live in platform-services' own pipeline instead, not here -- policy/ and
+# scripts/argocd_reconcile.sh ended up in that repo (they validate/exercise
+# what it deploys), and cross-repo checkout just to borrow them would be
+# messier than each repo validating its own content.
 # =============================================================================
 
 version: 2.1
@@ -104,15 +106,6 @@ commands:
             source .venv/bin/activate
             bandit -r __main__.py modules/ -ll
 
-  # TODO: policy-check (OPA/conftest) -- reintroduce once policy/ and
-  # environments/ exist in this repo.
-  # policy-check:
-  #   description: OPA/conftest policy validation
-  #   steps:
-  #     - run:
-  #         name: Run conftest against environment manifests
-  #         command: conftest test environments/ --policy policy/
-
 # ── Jobs ──────────────────────────────────────────────────────────────────────
 jobs:
   # Dry-run: lints the code, then shows what Pulumi *would* change, without
@@ -174,14 +167,6 @@ jobs:
           command: |
             export PULUMI_STACK=<< parameters.pulumi_stack >>
             bats tests/integration/infrastructure.bats
-      # TODO: Flux reconciliation + smoke test -- reintroduce once Flux is
-      # actually deployed as part of this project.
-      # - run:
-      #     name: Force Flux reconciliation and smoke test
-      #     command: |
-      #       export PULUMI_STACK=<< parameters.pulumi_stack >>
-      #       export SMOKE_HOST="${PULUMI_STACK}.local"
-      #       bash scripts/flux_reconcile.sh
       - run:
           name: Clean up kubeconfig
           when: always
