@@ -1,0 +1,166 @@
+# Argo CD and the Handoff
+
+Part of the [platform-core learning companion](README.md). Read
+[Cluster Provisioning](cluster-provisioning.md) first — the foundation has
+to be solid before anything gets installed on top of it.
+
+---
+
+## Installing a hub, then stepping back
+
+Imagine the construction crew's very last job, once the house itself is
+built: install a smart-home hub — one device that, once plugged in and
+paired to an account, will spend the rest of its life listening for
+instructions from that account and carrying them out on its own. The
+crew's job is to physically install the hub and pair it. It is emphatically
+*not* the crew's job to personally rearrange the furniture every time the
+homeowner wants something moved — that's what the hub is for.
+
+[`modules/argocd.py`](../modules/argocd.py) is this repo's last act, and
+its docstring says the boundary out loud:
+
+> Pulumi's job stops at getting the controller running. Once Argo CD is up,
+> it takes over watching Git and reconciling application manifests on its
+> own loop — Pulumi should never again touch a resource Argo CD owns.
+
+This is a specific, important idea worth naming precisely, because it's
+easy to blur: **Infrastructure as Code and configuration-as-code solve
+different problems, and mixing them up creates real pain.** Pulumi is
+excellent at "build the house and its foundation" — things that change
+rarely, where "tear it down and rebuild" is an acceptable recovery plan.
+It is a poor fit for "what furniture is currently arranged where" — things
+that change constantly, where you want a fast, cheap, in-place update
+history and an easy rollback, not a foundation-level rebuild. Argo CD (a
+**GitOps controller**) exists specifically for that second job: it watches
+a Git repository continuously and keeps the cluster's actual state matching
+whatever's declared there, on its own, forever — no human running a deploy
+command each time something changes.
+
+Two functions in this file do exactly the two things a crew does with a
+smart-home hub:
+
+**`install()`** physically installs the hub — a one-time Helm chart
+install, run once by Pulumi, exactly like installing any other appliance:
+
+```python
+return helm.v3.Release(
+    "argocd",
+    helm.v3.ReleaseArgs(
+        chart="argo-cd",
+        version=version,
+        repository_opts=helm.v3.RepositoryOptsArgs(
+            repo="https://argoproj.github.io/argo-helm",
+        ),
+        namespace=namespace,
+        create_namespace=True,
+    ),
+    opts=ResourceOptions(provider=provider),
+)
+```
+
+**`seed_gitops()`** pairs the hub to an account — creating exactly one
+object, an Argo `Application`, that tells the freshly-installed hub *which*
+account to start listening to:
+
+```python
+argocd_root_app = argocd.seed_gitops(
+    k8s,
+    repo_url="https://github.com/phrankson/platform-gitops.git",
+    path=f"environments/{pulumi.get_stack()}",
+    depends_on=[argocd_release],
+)
+```
+
+The instant that object exists, this repo's job is finished for this
+house. Every deployment onward is Argo CD discovering the next instruction
+in `platform-gitops` on its own — not another `pulumi up`.
+
+Notice `pulumi.get_stack()`, not the cluster's own name — a distinction
+worth holding onto. `platform-gitops`'s folders are named after the
+*Pulumi stack* (`platform-sandbox`, `app-dev`, `app-prod`); the underlying
+Kind house names differ slightly (`pe-sandbox` for the sandbox house).
+Using the wrong one would pair the hub to a folder that doesn't exist.
+
+## A different brand of hub than the instructions describe
+
+The book's own instructions describe installing Flux, not Argo CD — a
+choice this project made deliberately, and the substitution is a real
+simplification, not just a rename. Flux needs two separate devices talking
+to each other: a `GitRepository` object ("here's the account"), and a
+`Kustomization` object ("here's what to actually do with what that account
+says"). Argo CD's single `Application` object does the job of both,
+because it bakes the account's address directly into the same object that
+says where to deploy — there's no separate "register this account first"
+step to manage.
+
+<details>
+<summary><strong>Predict before reading on:</strong> the first real attempt to install this hub failed with the installer stuck, and a helper process called <code>redis-secret-init</code> crash-looping with the error <code>dial tcp 10.96.0.1:443: i/o timeout</code> — a total inability to reach the house's own internal address book from inside the house. Nothing about the hub's own settings was wrong. What single thing, shared across <em>all three houses at once</em>, was the actual cause?</summary>
+
+The real culprit was `kube-proxy` — the component that makes a house's
+internal address book (`10.96.0.1`) actually resolve to anything —
+crash-looping on **every node of all three houses simultaneously**, with
+the telling error `"command failed" err="failed complete: too many open
+files"`.
+
+The root cause was one shared limit on the machine itself, not anything
+inside any single house:
+
+```console
+$ sysctl fs.inotify.max_user_instances
+fs.inotify.max_user_instances = 128
+```
+
+Think of this as the shared electrical panel for the whole property, not a
+per-house circuit — `128` is comfortably enough capacity for *one* house
+under construction. Building all three simultaneously — each with its own
+address-book service, its own network watcher, its own name-resolution
+service, all needing to plug into the same shared panel — tripped the
+breaker for the entire property at once. Once the internal address book
+stopped resolving, *nothing* inside any of the three houses could find
+anything else: not the hub's installer, not name resolution, nothing. The
+visible symptom (the hub failing to install) was several layers downstream
+of the actual cause (a property-wide electrical limit with zero connection
+to Argo CD, Helm, or this codebase).
+
+The fix is a one-time, property-wide change — not a code change:
+
+```console
+$ sudo sysctl fs.inotify.max_user_watches=524288
+$ sudo sysctl fs.inotify.max_user_instances=512
+```
+
+After that, `kube-proxy` recovered on its own on the next restart cycle
+(forced immediately rather than waiting out the backoff timer), and the
+exact same install that had just failed succeeded cleanly on retry, with
+zero code changes.
+
+Worth keeping as a general instinct, not just a fact about this project:
+**the deepest layer of a stack — here, the host's own kernel limits — can
+produce a symptom that looks exactly like a misconfiguration three layers
+up, and the only way to tell the difference is checking the layer the
+error message never mentions at all.**
+</details>
+
+**Try it yourself** — the whole chain, live, right now:
+
+```console
+$ kubectl get applications -n argocd
+NAME                SYNC STATUS   HEALTH STATUS
+platform-gitops     Synced        Healthy
+platform-services   Synced        Healthy
+istio-base          OutOfSync     Healthy
+istiod              OutOfSync     Healthy
+istio-ingress       Synced        Progressing
+```
+
+`platform-gitops` is the one object `seed_gitops()` created — the pairing
+instruction. Every other row in that list, this repo never created
+directly; the hub found those on its own, by following `platform-gitops`.
+See `platform-gitops`'s own learning companion for what those actually are
+and how the hub discovers them.
+
+---
+
+Continue to [**Verification and CI/CD**](verification-and-cicd.md) for how
+this project proves a house actually works, rather than trusting that
+`pulumi up` said so.
