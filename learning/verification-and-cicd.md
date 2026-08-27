@@ -34,9 +34,10 @@ Proof from an outside party, not the builder grading its own work.
 A few lower-stakes things this project learned the hard way, that don't
 need a full incident to be useful to know:
 
-- **`pulumi stack init <name>` does not create `Pulumi.<name>.yaml`** —
-  contrary to what the book implies. That file only appears after the
-  first `pulumi config set` or `pulumi preview`/`up` against that stack.
+- **`pulumi stack init <name>` does not create `Pulumi.<name>.yaml`** — a
+  common assumption that turns out to be wrong. That file only appears
+  after the first `pulumi config set` or `pulumi preview`/`up` against that
+  stack.
 - **`mypy` hangs indefinitely** on this codebase without
   `--follow-imports=skip` — it chases into `pulumi_kubernetes`'s enormous
   generated SDK otherwise. See the `lint-code` command in
