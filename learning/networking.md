@@ -102,12 +102,12 @@ nodes:
 ```
 
 Getting that document safely onto disk is a smaller problem with a
-genuinely reusable fix. The book's original approach inlined the YAML text
-directly into a shell command — and YAML is full of exactly the characters
-that break shell parsing: colons, quotes, dashes. A config value containing
-any of those could silently corrupt the file being written, or break the
-command outright — like handing a contractor a spec sheet where a stray
-comma in the address turned "10.0.0.0/16, Suite 2" into two separate,
+genuinely reusable fix. An earlier version of this code inlined the YAML
+text directly into a shell command, and YAML is full of exactly the
+characters that break shell parsing: colons, quotes, dashes. A config value
+containing any of those could silently corrupt the file being written, or
+break the command outright — like handing a contractor a spec sheet where a
+stray comma in the address turned "10.0.0.0/16, Suite 2" into two separate,
 garbled instructions.
 
 The fix sidesteps the problem entirely rather than trying to escape every

@@ -81,17 +81,17 @@ worth holding onto. `platform-gitops`'s folders are named after the
 Kind house names differ slightly (`pe-sandbox` for the sandbox house).
 Using the wrong one would pair the hub to a folder that doesn't exist.
 
-## A different brand of hub than the instructions describe
+## Argo CD instead of Flux
 
-The book's own instructions describe installing Flux, not Argo CD — a
-choice this project made deliberately, and the substitution is a real
-simplification, not just a rename. Flux needs two separate devices talking
-to each other: a `GitRepository` object ("here's the account"), and a
-`Kustomization` object ("here's what to actually do with what that account
-says"). Argo CD's single `Application` object does the job of both,
-because it bakes the account's address directly into the same object that
-says where to deploy — there's no separate "register this account first"
-step to manage.
+Flux is the more commonly taught GitOps controller, and it works
+differently from Argo CD in a way worth understanding, since Argo CD is
+what this project actually runs. Flux needs two separate devices talking
+to each other: a `GitRepository` object that says which account to watch,
+and a `Kustomization` object that says what to do with what that account
+says. Argo CD's single `Application` object does the job of both, because
+it bakes the account's address directly into the same object that says
+where to deploy. There's no separate "register this account first" step to
+manage.
 
 <details>
 <summary><strong>Predict before reading on:</strong> the first real attempt to install this hub failed with the installer stuck, and a helper process called <code>redis-secret-init</code> crash-looping with the error <code>dial tcp 10.96.0.1:443: i/o timeout</code> — a total inability to reach the house's own internal address book from inside the house. Nothing about the hub's own settings was wrong. What single thing, shared across <em>all three houses at once</em>, was the actual cause?</summary>
