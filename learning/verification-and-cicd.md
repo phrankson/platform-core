@@ -93,6 +93,6 @@ long before it reaches the one where a mistake actually costs something.
 
 This repo's last act, per house, is pairing one smart-home hub to
 `platform-gitops`. Every instruction that hub follows from here on lives in
-that repo instead — not another `pulumi up`. `platform-gitops`'s own
-learning companion picks up exactly there: what the hub actually finds when
-it goes looking.
+that repo instead — not another `pulumi up`.
+[`platform-gitops`'s own learning companion](../../platform-gitops/learning/README.md)
+picks up exactly there: what the hub actually finds when it goes looking.

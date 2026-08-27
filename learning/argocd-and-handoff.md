@@ -156,8 +156,8 @@ istio-ingress       Synced        Progressing
 `platform-gitops` is the one object `seed_gitops()` created — the pairing
 instruction. Every other row in that list, this repo never created
 directly; the hub found those on its own, by following `platform-gitops`.
-See `platform-gitops`'s own learning companion for what those actually are
-and how the hub discovers them.
+See [`platform-gitops`'s own learning companion](../../platform-gitops/learning/README.md)
+for what those actually are and how the hub discovers them.
 
 ## What a postmortem would say about the inotify incident
 
