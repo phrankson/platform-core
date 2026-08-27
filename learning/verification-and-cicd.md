@@ -29,6 +29,15 @@ $ bats tests/integration/infrastructure.bats
 
 Proof from an outside party, not the builder grading its own work.
 
+This is also a concrete example of something usually described in
+developer-workflow terms as the outer loop. The inner loop is what a
+developer does on their own machine before anything gets shared —
+changing code, rerunning it, checking the result, over and over, as fast
+as possible. The outer loop is everything that happens after a change is
+pushed: building it, deploying it, and verifying it actually works in a
+real environment. These bats tests are outer-loop work. They only run
+after `pulumi up` has already deployed something real.
+
 ## Smaller corrections, worth knowing without needing their own story
 
 A few lower-stakes things this project learned the hard way, that don't
@@ -71,6 +80,12 @@ Every build step is followed immediately by its own independent inspection
 before the *next* approval checkpoint even becomes available — a house is
 never promoted on the builder's word alone, and a problem caught in
 `app-dev` never even reaches the door of `app-prod`.
+
+This pattern has a name: progressive delivery. Instead of pushing a change
+everywhere at once, it moves through environments of increasing
+consequence, one at a time, with a real check between each move. A mistake
+gets caught in the cheapest, least consequential environment available,
+long before it reaches the one where a mistake actually costs something.
 
 ---
 

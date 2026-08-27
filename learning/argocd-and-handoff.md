@@ -159,6 +159,43 @@ directly; the hub found those on its own, by following `platform-gitops`.
 See `platform-gitops`'s own learning companion for what those actually are
 and how the hub discovers them.
 
+## What a postmortem would say about the inotify incident
+
+Site Reliability Engineering has a specific way of writing up an incident
+like the one above, and it's worth comparing to what you just read. A good
+postmortem stays blameless — it asks what about the system allowed the
+failure, not who caused it — and it separates the trigger from the root
+cause. The trigger here was running three Kind clusters at once. The root
+cause was a host kernel limit nobody had ever needed to think about before
+that point. Fixing only the trigger (say, never running more than one
+cluster at a time) would have avoided this specific incident without
+addressing the actual constraint. Fixing the root cause, which is what
+happened, means the same failure won't come back the next time something
+else pushes against that same limit.
+
+SRE also has a concept called an error budget: instead of demanding
+perfect uptime, you decide in advance how much failure is acceptable, and
+you treat that budget as something to spend deliberately rather than
+something you're merely failing to avoid. This project has never defined
+one. There's no stated target for how reliable these clusters are supposed
+to be, which means there's also no defined threshold for when a problem
+like this one should have paged someone versus waited until morning. That
+absence isn't a criticism of the incident response — it's a genuine gap
+worth naming: reacting well to a failure and having a stated reliability
+target are two different things, and this project only has the first one.
+
+## The gap: nobody is on call for the platform itself
+
+It's worth being direct about something the last few sections gloss over.
+Once Argo CD is installed and paired, it keeps running on its own, but
+nothing in this project watches *it*. If Argo CD's own pods crashed at
+2 a.m., nothing would notice, and nothing would page anyone. The tests in
+the next section check that things worked at the moment they were run, not
+continuously. Platform ops — someone or something responsible for the
+platform's own health, the way an SRE team is responsible for a product's
+uptime — doesn't exist here yet. This project ends at "prove it worked
+just now," not "make sure it keeps working."
+
 ---
 
 Continue to [**Verification and CI/CD**](verification-and-cicd.md) for how
